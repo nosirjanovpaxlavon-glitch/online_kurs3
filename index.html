@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Kurs - Bosh sahifa</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI'; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { text-align: center; color: white; margin-bottom: 40px; padding: 20px; }
+        header h1 { font-size: 3em; margin-bottom: 10px; }
+        header p { font-size: 1.2em; opacity: 0.9; }
+        .user-panel { background: white; border-radius: 15px; padding: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .user-info { display: flex; align-items: center; gap: 20px; }
+        .balance-display { font-size: 1.5em; color: #667eea; font-weight: bold; }
+        .auth-buttons button { padding: 10px 25px; border: none; border-radius: 25px; cursor: pointer; margin-left: 10px; font-size: 1em; }
+        .btn-login { background: #667eea; color: white; }
+        .btn-logout { background: #ff6b6b; color: white; }
+        .btn-add-money { background: #4caf50; color: white; }
+        .btn-teacher-action { background: #2196f3; color: white; display: none; }
+        .courses { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .course-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: transform 0.3s; }
+        .course-card:hover { transform: translateY(-5px); }
+        .course-header { height: 150px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; }
+        .course-header h3 { font-size: 1.4em; margin-bottom: 5px; }
+        .course-price { font-size: 1.3em; font-weight: bold; }
+        .course-body { padding: 20px; }
+        .course-body p { color: #666; margin-bottom: 15px; font-size: 0.95em; }
+        .course-info { display: flex; justify-content: space-between; margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 8px; }
+        .info-item { text-align: center; }
+        .info-item .label { font-size: 0.8em; color: #999; }
+        .info-item .value { font-size: 1em; font-weight: bold; color: #333; }
+        .btn-book { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 25px; cursor: pointer; margin-top: 10px; }
+        .btn-book:hover { background: #5568d3; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 20px; padding: 30px; max-width: 600px; width: 90%; margin: auto; max-height: 90vh; overflow-y: auto; }
+        .modal-content h2 { color: #667eea; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; }
+        .form-group input:focus { outline: none; border-color: #667eea; }
+        .form-group select { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; }
+        .time-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+        .time-slot { padding: 10px; text-align: center; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 0.85em; }
+        .time-slot.selected { background: #667eea; color: white; border-color: #667eea; }
+        .modal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
+        .total-price { font-size: 1.5em; font-weight: bold; color: #667eea; }
+        .modal-footer button { padding: 12px 30px; border: none; border-radius: 25px; cursor: pointer; }
+        .btn-confirm { background: #667eea; color: white; }
+        .btn-cancel { background: #ff6b6b; color: white; }
+        .varoq-card { background: #f5f5f5; padding: 15px; border-radius: 10px; margin-bottom: 10px; }
+        .varoq-title { font-weight: bold; color: #333; margin-bottom: 5px; }
+        .varoq-desc { color: #666; font-size: 0.9em; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 15px; font-size: 0.8em; }
+        .status-active { background: #4caf50; color: white; }
+        .status-completed { background: #9e9e9e; color: white; }
+        .status-cancelled { background: #ff6b6b; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎓 Online Kurslar</h1>
+            <p>Bilimingizni kengaytiring va malakaoringizni oshiring!</p>
+        </header>
+
+        <div class="user-panel">
+            <div class="user-info">
+                <span id="userGreeting">Hush kelibsiz!</span>
+                <span id="userBalance" class="balance-display" style="display: none;">Balans: 0 so'm</span>
+            </div>
+            <div class="auth-buttons">
+                <button id="loginBtn" class="btn-login" onclick="showLogin()">🔐 Login</button>
+                <button id="logoutBtn" class="btn-logout" onclick="logout()" style="display: none;">Logout</button>
+                <button id="addMoneyBtn" class="btn-add-money" onclick="showAddMoney()" style="display: none;">💰 Pul qo'shish</button>
+                <button id="teacherBtn" class="btn-teacher-action" onclick="showTeacherPanel()">👨‍🏫 Ustoz Panel</button>
+            </div>
+        </div>
+
+        <div class="courses" id="coursesList"></div>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>🔐 Login</h2>
+            <div class="form-group"><label>Username</label><input type="text" id="loginUsername" placeholder="Foydalanuvchi nomi"></div>
+            <div class="form-group"><label>Parol</label><input type="password" id="loginPassword" placeholder="Parolni kiriting"></div>
+            <div class="modal-footer" style="flex-direction: column; gap: 10px;">
+                <button class="btn-confirm" onclick="login()">Kirish</button>
+                <button class="btn-add-money" onclick="showRegister()">📝 Ro'yxatdan o'tish</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <h2>📝 Ro'yxatdan o'tish</h2>
+            <div class="form-group"><label>Username</label><input type="text" id="regUsername" placeholder="Foydalanuvchi nomi"></div>
+            <div class="form-group"><label>Parol</label><input type="password" id="regPassword" placeholder="Parol"></div>
+            <div class="modal-footer"><button class="btn-cancel" onclick="closeRegister()">Bekor qilish</button><button class="btn-confirm" onclick="register()">Ro'yxatdan o'tish</button></div>
+        </div>
+    </div>
+
+    <div id="addMoneyModal" class="modal">
+        <div class="modal-content">
+            <h2>💰 Pul qo'shish</h2>
+            <div class="form-group"><label>Summa (so'm)</label><input type="number" id="addMoneyAmount" placeholder="500000"></div>
+            <div class="form-group"><label>Parol (oylik)</label><input type="password" id="addMoneyPassword"></div>
+            <div class="modal-footer"><button class="btn-cancel" onclick="closeAddMoney()">Bekor qilish</button><button class="btn-confirm" onclick="addMoney()">Qo'shish</button></div>
+        </div>
+    </div>
+
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <h2>📝 Kurs band qilish</h2>
+            <input type="hidden" id="selectedCourse"><input type="hidden" id="selectedPrice"><input type="hidden" id="bookingId">
+            <div class="form-group"><label>To'liq ism</label><input type="text" id="fullName" placeholder="Abdullov Abdullox"></div>
+            <div class="form-group"><label>Telefon</label><input type="tel" id="phone" placeholder="+998 90 123 45 67"></div>
+            <div class="form-group"><label>Davomiyligi (oy)</label><select id="bookingMonths" onchange="updateBookingPrice()"><option value="1">1 oy</option><option value="2">2 oy</option><option value="3">3 oy</option></select></div>
+            <div class="form-group"><label>Vaqt tanlang</label><div class="time-slots" id="timeSlots"><div class="time-slot" onclick="selectTime('Dushanba 10:00')">Dush 10:00</div><div class="time-slot" onclick="selectTime('Chorshanba 14:00')">Cor 14:00</div></div></div>
+            <div class="modal-footer"><div><div>Jami to'lov</div><div class="total-price" id="displayFinalPrice">0 so'm</div></div><button class="btn-cancel" onclick="closeBooking()">Bekor qilish</button><button class="btn-confirm" onclick="submitBooking()">Tasdiqlash</button></div>
+        </div>
+    </div>
+
+    <div id="teacherModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <h2 id="teacherModalTitle">👨‍🏫 Ustoz Panel</h2>
+            <div class="form-group"><label>Ustoz balansi</label><div class="total-price" id="teacherBalance" style="font-size: 2em;">0 so'm</div></div>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="btn-confirm" onclick="showStudentList()">👥 O'quvchilar ro'yxati</button>
+                <button class="btn-add-money" onclick="showWithdrawModal()">💸 Pul yechib olish</button>
+                <button class="btn-cancel" onclick="closeTeacher()">Yopish</button>
+            </div>
+            <div id="teacherContent" style="max-height: 500px; overflow-y: auto;">
+                <div id="studentList" style="display: none;"></div>
+            </div>
+            <div id="varoqContainer" style="display: none; margin-top: 20px; border-top: 1px solid #e0e0e0; padding-top: 20px;">
+                <h3 id="lessonSubject" style="color: #667eea; margin-bottom: 20px;"></h3>
+                <div id="varoqsList"></div>
+                <button class="btn-cancel" onclick="closeVaroqs()" style="margin-top: 20px;">❌ Yopish</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <h2>💸 Pul yechib olish</h2>
+            <div class="form-group"><label>Summa (so'm)</label><input type="number" id="withdrawAmount" placeholder="Summa"></div>
+            <div class="modal-footer"><button class="btn-cancel" onclick="closeWithdraw()">Bekor qilish</button><button class="btn-confirm" onclick="withdrawMoney()">Yechib olish</button></div>
+        </div>
+    </div>
+
+    <div id="studentModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <h2>👥 O'quvchilar ro'yxati</h2>
+            <div id="studentsList" style="max-height: 500px; overflow-y: auto;"></div>
+            <button class="btn-cancel" onclick="closeStudentList()" style="margin-top: 20px;">Yopish</button>
+        </div>
+    </div>
+
+    <div id="startLessonModal" class="modal">
+        <div class="modal-content">
+            <h2>📚 Darsni boshlash</h2>
+            <div class="form-group"><label>Kurs</label><input type="text" id="lessonCourse" disabled></div>
+            <div class="form-group"><label>O'quvchi</label><input type="text" id="lessonStudent" disabled></div>
+            <div class="form-group"><label>Telefon</label><input type="tel" id="lessonPhone" disabled></div>
+            <div class="form-group"><label>Davomiyligi</label><input type="text" id="lessonDuration" disabled></div>
+            <div class="form-group"><label>Vaqt</label><input type="text" id="lessonTime" disabled></div>
+            <button class="btn-confirm" onclick="startLessonConfirm()">Darsni boshla</button>
+        </div>
+    </div>
+
+    <div id="successModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <h2 style="color: #4caf50;">✅ Muvaffaqiyatli!</h2>
+            <p id="successMessage" style="margin: 20px 0; color: #666;"></p>
+            <button class="btn-confirm" onclick="closeSuccess()">Yopish</button>
+        </div>
+    </div>
+
+    <script>
+        const db = {
+            users: [],
+            bookings: [],
+            attendance: [],
+            grades: [],
+            tests: [],
+            certificates: [],
+            payments: [],
+            teacherBalances: {},
+            varoqProgress: {},
+            varoqTopics: {
+                'IELTS Kursi': ['Listening: Daily Conversation', 'Listening: Academic Lecture', 'Reading: Passage 1', 'Reading: Passage 2', 'Reading: Passage 3', 'Writing: Task 1 (Chart)', 'Writing: Task 2 (Essay)', 'Speaking: Part 1 (Introduction)', 'Speaking: Part 2 (Long Turn)', 'Speaking: Part 3 (Discussion)'],
+                'TOEFL Kursi': ['TOEFL Reading: Academic Texts', 'TOEFL Listening: Campus Conversations', 'TOEFL Speaking: Task 1 (Independent)', 'TOEFL Speaking: Task 2 (Integrated)', 'TOEFL Writing: Task 1 (Essay)', 'TOEFL Writing: Task 2 (Integrated)', 'Vocabulary: Academic Words', 'Grammar: Advanced Tenses', 'Pronunciation: American English', 'Test Strategies: Time Management'],
+                'Duolingo Kursi': ['Duolingo Basics: Alphabet', 'Duolingo Grammar: Verbs', 'Duolingo Vocabulary: Daily Life', 'Duolingo Listening: Conversations', 'Duolingo Speaking: Introductions', 'Duolingo Writing: Short Texts', 'Duolingo Reading: Simple Articles', 'Duolingo Numbers & Dates', 'Duolingo Time Expressions', 'Project: Duolingo Conversation'],
+                'Matematika 9-sinf': ['Algebra: Quadratic Equations', 'Algebra: Systems of Equations', 'Geometry: Triangles', 'Geometry: Circles', 'Functions: Quadratic Function', 'Progressions: Arithmetic & Geometric', 'Probability & Statistics', 'Trigonometry: Basics', 'Absolute Value & Radicals', 'Review & Practice Test'],
+                'Matematika 10-sinf': ['Algebra: Functions & Graphs', 'Algebra: Exponential & Logarithmic', 'Geometry: Polyhedrons', 'Geometry: Solids', 'Trigonometry: Identities', 'Trigonometry: Equations', 'Vectors & Coordinates', 'Probability & Statistics', 'Limits & Derivatives', 'Review & Practice Test'],
+                'Statistika': ['Descriptive Statistics: Measures', 'Descriptive Statistics: Graphs', 'Probability: Basics', 'Probability: Distributions', 'Sampling & Populations', 'Confidence Intervals', 'Hypothesis Testing', 'Correlation & Regression', 'ANOVA & Chi-Square', 'Project: Statistical Analysis'],
+                'EGE Matematika': ['EGE Algebra: Equations', 'EGE Algebra: Inequalities', 'EGE Geometry: Planimetry', 'EGE Geometry: Stereometry', 'EGE Functions & Graphs', 'EGE Parameters', 'EGE Text Problems', 'EGE Trigonometry', 'EGE Number Theory', 'EGE Practice Tests'],
+                'Biologiya 9-sinf': ['Cell Biology: Structure', 'Cell Biology: Functions', 'Genetics: Mendel Laws', 'Genetics: DNA & RNA', 'Evolution: Natural Selection', 'Human Anatomy: Organ Systems', 'Ecology: Ecosystems', 'Microbiology: Bacteria & Viruses', 'Botany: Plant Classification', 'Zoology: Animal Kingdom'],
+                'Biologiya 10-sinf': ['Molecular Genetics: DNA Replication', 'Genetics: Mendelian Inheritance', 'Genetics: linkage & Crossing Over', 'Evolution: Mechanisms', 'Evolution: Human Origin', 'Human Physiology: Nervous System', 'Human Physiology: Endocrine System', 'Ecology: Biosphere', 'Biotechnology: PCR', 'Biotechnology: Cloning'],
+                'Biologiya Olimpiadasi': ['Advanced Genetics: Epigenetics', 'Advanced Molecular Biology', 'Advanced Evolutionary Theory', 'Advanced Ecology', 'Animal Anatomy & Physiology', 'Plant Anatomy & Physiology', 'Microbiology: Immunology', 'Parasitology', 'Ethology', 'Field Research Methods'],
+                'Kimyo': ['Basic Concepts: Matter', 'Basic Concepts: Moles', 'Atomic Structure: Orbitals', 'Chemical Bonding: Ionic', 'Chemical Bonding: Covalent', 'Chemical Reactions: Equilibrium', 'Chemical Reactions: Kinetics', 'Electrochemistry: Galvanic Cells', 'Organic Chemistry: Alkanes', 'Organic Chemistry: Alcohols'],
+                'Geografiya': ['Physical Geography: Lithosphere', 'Physical Geography: Atmosphere', 'Physical Geography: Hydrosphere', 'Physical Geography: Biosphere', 'Human Geography: Population', 'Human Geography: Urbanization', 'Economic Geography: Industries', 'Regional Geography: Europe', 'Regional Geography: Asia', 'Geographical Information Systems'],
+                'Tarix': ['Ancient History: Mesopotamia', 'Ancient History: Egypt', 'Medieval History: Silk Road', 'Modern History: Renaissance', 'Modern History: Industrial Revolution', '20th Century: World Wars', '20th Century: Cold War', 'Uzbek History: Khanates', 'Uzbek History: Russian Rule', 'Uzbek History: Independence'],
+                'Adabiyot': ['Uzbek Literature: Folklore', 'Uzbek Literature:阿卜杜拉 Qodiriy', 'Uzbek Literature: Alisher Navoiy', 'Russian Literature: Pushkin', 'Russian Literature: Tolstoy', 'World Literature: Shakespeare', 'World Literature: Dostoevsky', 'Literary Analysis: Poetry', 'Literary Analysis: Prose', 'Creative Writing'],
+                'Fizika': ['Mechanics: Kinematics', 'Mechanics: Dynamics', 'Mechanics: Statics', 'Thermodynamics: Laws', 'Thermodynamics: Applications', 'Electromagnetism: Fields', 'Electromagnetism: Circuits', 'Optics: Rays', 'Optics: Waves', 'Modern Physics: Quantum'],
+                'Informatika': ['Algorithms & Logic', 'Python Basics', 'Data Structures: Arrays', 'Data Structures: Linked Lists', 'Web Development: HTML/CSS', 'Web Development: JavaScript', 'Database Basics: SQL', 'Cybersecurity: Basics', 'AI Introduction: Machine Learning', 'Project: Simple App'],
+                'Rissо': ['Drawing: Basics', 'Drawing: Proportions', 'Drawing: Shading', 'Drawing: Composition', 'Color Theory: Basics', 'Color Theory: Harmonies', 'Painting: Watercolor', 'Painting: Acrylic', 'Sketching: Life Drawing', 'Project: Art Portfolio'],
+                'JavaScript Kursi': ['Variables & Data Types', 'Functions & Arrow Functions', 'Arrays & Objects', 'DOM Manipulation', 'Event Listeners', 'Async/Await & Promises', 'ES6+ Features', 'JSON & API Calling', 'Project: To-Do List', 'Project: Calculator'],
+                'Python Kursi': ['Variables & Basic Syntax', 'Lists & Tuples', 'Dictionaries & Sets', 'Loops: For & While', 'Functions & Modules', 'File Handling', 'Error Handling', 'Object-Oriented Programming', 'Working with APIs', 'Project: Data Analyzer'],
+                'Java Kursi': ['Syntax & Data Types', 'Control Flow: If/Else', 'Loops & Arrays', 'Classes & Objects', 'Inheritance & Polymorphism', 'Interfaces & Abstract Classes', 'Collections Framework', 'Exception Handling', 'File I/O', 'Project: Student Management'],
+                'C# Kursi': ['C# Basics: Syntax', 'C# Basics: Types', 'C# OOP: Classes', 'C# OOP: Inheritance', 'C# Collections', 'C# LINQ', 'C# File I/O', 'C# Exceptions', 'C# Interfaces', 'Project: Windows App'],
+                'PHP Kursi': ['PHP Basics: Syntax', 'PHP Basics: Arrays', 'PHP OOP: Classes', 'PHP MySQL: Connection', 'PHP MySQL: CRUD', 'PHP Forms: Validation', 'PHP Sessions & Cookies', 'PHP APIs: REST', 'PHP Security', 'Project: CMS'],
+                'HTML & CSS Kursi': ['HTML: Structure & Tags', 'HTML: Forms & Tables', 'CSS: Selectors & Box Model', 'CSS: Flexbox', 'CSS: Grid Layout', 'CSS: Responsive Design', 'CSS: Animations', 'CSS: Media Queries', 'Project: Landing Page', 'Project: Portfolio Site'],
+                'React Kursi': ['React Basics: Components', 'React Basics: JSX', 'React Hooks: useState', 'React Hooks: useEffect', 'React Router: Navigation', 'React State: Context', 'React API: Fetching', 'React Components: Patterns', 'React Performance', 'Project: E-commerce'],
+                'Vue.js Kursi': ['Vue Basics: Components', 'Vue Basics: Directives', 'Vue Router: Navigation', 'Vue State: Pinia', 'Vue Components: Patterns', 'Vue API: Fetching', 'Vue Composables', 'Vue Performance', 'Vue SSR', 'Project: Blog Platform'],
+                'Node.js Kursi': ['Node Basics: Modules', 'Node Basics: NPM', 'Node Express: Routes', 'Node Express: Middleware', 'Node Database: MongoDB', 'Node Database: PostgreSQL', 'Node Authentication', 'Node APIs: REST', 'Node WebSocket', 'Project: Social App'],
+                'Kotlin Kursi': ['Kotlin Basics: Syntax', 'Kotlin Basics: OOP', 'Kotlin Android: Activities', 'Kotlin Android: Fragments', 'Kotlin Coroutines', 'Kotlin Room Database', 'Kotlin APIs: Networking', 'Kotlin UI: Jetpack Compose', 'Kotlin State Management', 'Project: Android App'],
+                'IT Lux': ['Advanced Architecture: Microservices', 'Advanced Architecture: Serverless', 'DevOps: CI/CD', 'DevOps: Docker', 'Cloud: AWS', 'Cloud: Azure', 'Security: Encryption', 'Security: Penetration Testing', 'AI Integration: LLMs', 'Project: Enterprise System'],
+                'German Kursi': ['German Basics: Alphabet', 'German Grammar: Cases', 'German Vocabulary: Daily Life', 'German Listening: Conversations', 'German Speaking: Introductions', 'German Writing: Short Texts', 'German Reading: Simple Articles', 'German Numbers & Dates', 'German Time Expressions', 'Project: German Conversation'],
+                'French Kursi': ['French Basics: Pronunciation', 'French Grammar: Verbs', 'French Vocabulary: Travel', 'French Listening: Dialogues', 'French Speaking: Restaurant', 'French Writing: Letters', 'French Reading: Short Stories', 'French Numbers & Money', 'French Colors & Shapes', 'Project: French Trip Planning'],
+                'Figma Dizayn': ['Figma Interface', 'Frames & Containers', 'Components & Variables', 'Prototyping Basics', 'User Flows', 'Design Systems', 'Responsive Design', 'Collaboration Tools', 'Export & Handoff', 'Project: Mobile App Design'],
+                'Photoshop Kursi': ['Interface & Tools', 'Layers & Masks', 'Selection Techniques', 'Retouching Basics', 'Color Correction', 'Typography', 'Filters & Effects', 'Image Compositing', 'Web Design Assets', 'Project: Poster Design']
+            }
+        };
+
+        const courses = {
+            'IELTS Kursi': 280000, 'TOEFL Kursi': 300000, 'Duolingo Kursi': 200000,
+            'Matematika 9-sinf': 180000, 'Matematika 10-sinf': 190000, 'Statistika': 220000, 'EGE Matematika': 250000,
+            'Biologiya 9-sinf': 170000, 'Biologiya 10-sinf': 180000, 'Biologiya Olimpiadasi': 300000,
+            'Kimyo': 190000, 'Geografiya': 160000, 'Tarix': 150000, 'Adabiyot': 140000, 'Fizika': 180000, 'Informatika': 160000, 'Rissо': 120000,
+            'JavaScript Kursi': 250000, 'Python Kursi': 220000, 'Java Kursi': 240000, 'C# Kursi': 230000, 'PHP Kursi': 200000,
+            'HTML & CSS Kursi': 150000, 'React Kursi': 300000, 'Vue.js Kursi': 280000, 'Node.js Kursi': 270000, 'Kotlin Kursi': 260000,
+            'IT Lux': 10000000000000000, 'German Kursi': 200000, 'French Kursi': 210000,
+            'Figma Dizayn': 220000, 'Photoshop Kursi': 190000
+        };
+
+        let currentUser = null;
+        let selectedTime = null;
+        let currentBooking = null;
+
+        function loadDB() {
+            const saved = localStorage.getItem('onlineKursDB');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                db.users = parsed.users || [];
+                db.bookings = parsed.bookings || [];
+                db.attendance = parsed.attendance || [];
+                db.grades = parsed.grades || [];
+                db.tests = parsed.tests || [];
+                db.certificates = parsed.certificates || [];
+                db.payments = parsed.payments || [];
+                db.teacherBalances = parsed.teacherBalances || {};
+                db.varoqProgress = parsed.varoqProgress || {};
+            }
+        }
+
+        function saveDB() {
+            localStorage.setItem('onlineKursDB', JSON.stringify(db));
+        }
+
+        function formatPrice(price) {
+            if (price >= 1000000000000000) return (price / 1000000000000000).toFixed(1) + ' kvadrillion so\'m';
+            return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' so\'m';
+        }
+
+        function renderCourses() {
+            const container = document.getElementById('coursesList');
+            container.innerHTML = '';
+            Object.entries(courses).forEach(([name, price]) => {
+                const card = document.createElement('div');
+                card.className = 'course-card';
+                card.innerHTML = `
+                    <div class="course-header"><h3>${name}</h3><div class="course-price">${formatPrice(price)}</div></div>
+                    <div class="course-body"><p>${name} darslari.</p>
+                    <div class="course-info"><div class="info-item"><div class="label">Davomiyligi</div><div class="value">1-3 oy</div></div>
+                    <div class="info-item"><div class="label">Darslar</div><div class="value">10 ta</div></div>
+                    <div class="info-item"><div class="label">Sotilgan</div><div class="value">${Math.floor(Math.random() * 100 + 10)}</div></div></div>
+                    <button class="btn-book" onclick="openBooking('${name}', ${price})">Band qilish</button></div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function showLogin() { document.getElementById('loginModal').classList.add('active'); }
+        function closeLogin() { document.getElementById('loginModal').classList.remove('active'); }
+        function showRegister() { document.getElementById('registerModal').classList.add('active'); }
+        function closeRegister() { document.getElementById('registerModal').classList.remove('active'); }
+        function showAddMoney() { document.getElementById('addMoneyModal').classList.add('active'); }
+        function closeAddMoney() { document.getElementById('addMoneyModal').classList.remove('active'); }
+        function showTeacherPanel() { document.getElementById('teacherModal').classList.add('active'); document.getElementById('teacherBalance').textContent = formatPrice(getTeacherBalance(currentUser.email)); }
+
+        function showWithdrawModal() {
+            document.getElementById('withdrawModal').classList.add('active');
+        }
+
+        function closeWithdraw() { document.getElementById('withdrawModal').classList.remove('active'); }
+        function showStudentList() {
+            const list = document.getElementById('studentList');
+            list.innerHTML = '';
+            const userBookings = db.bookings.filter(b => b.teacherEmail === currentUser.email && b.status === 'active');
+            if (userBookings.length === 0) {
+                list.innerHTML = '<p>Hech qanday o\'quvchi band qilingan emas.</p>';
+            } else {
+                userBookings.forEach((b, index) => {
+                    list.innerHTML += `
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                            <strong>${b.course}</strong><br>
+                            O'quvchi: ${b.fullName}<br>
+                            Telefon: ${b.phone}<br>
+                            Davomiyligi: ${b.months} oy<br>
+                            Vaqt: ${b.time}<br>
+                            <button class="btn-confirm" onclick="showStartLesson(${index})">Darsni boshla</button>
+                            <button class="btn-cancel" onclick="cancelBooking('${b.id}')">Bekor qilish</button>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('studentList').style.display = 'block';
+        }
+
+        function closeStudentList() { document.getElementById('studentList').style.display = 'none'; }
+
+        function showStartLesson(index) {
+            const userBookings = db.bookings.filter(b => b.teacherEmail === currentUser.email && b.status === 'active');
+            const booking = userBookings[index];
+            currentBooking = booking;
+            document.getElementById('lessonCourse').value = booking.course;
+            document.getElementById('lessonStudent').value = booking.fullName;
+            document.getElementById('lessonPhone').value = booking.phone;
+            document.getElementById('lessonDuration').value = booking.months + ' oy';
+            document.getElementById('lessonTime').value = booking.time;
+            document.getElementById('startLessonModal').classList.add('active');
+        }
+
+        function closeStartLesson() { document.getElementById('startLessonModal').classList.remove('active'); }
+
+        function startLessonConfirm() {
+            const booking = currentBooking;
+            booking.status = 'in-progress';
+            saveDB();
+            
+            teacherBalance = db.teacherBalances[currentUser.email] || 0;
+            teacherBalance += booking.price;
+            db.teacherBalances[currentUser.email] = teacherBalance;
+            saveDB();
+            
+            closeTeacher();
+            closeStartLesson();
+            alert(`✅ Dars boshlandi!\n\n${booking.course}\nO'quvchi: ${booking.fullName}\nTo'lov: ${formatPrice(booking.price)}\n\nDoma balansiga ${formatPrice(booking.price)} qo'shildi!`);
+        }
+
+        function showVaroqs(subject) {
+            const topics = db.varoqTopics[subject];
+            if (!topics) {
+                alert(`❌ Bu kurs (${subject}) uchun mavzu topilmadi!`);
+                return;
+            }
+            
+            document.getElementById('lessonSubject').textContent = `📚 ${subject} - ${topics.length} ta Varoq`;
+            const varoqsList = document.getElementById('varoqsList');
+            varoqsList.innerHTML = '';
+            
+            topics.forEach((topic, index) => {
+                const varoqIndex = index + 1;
+                const isCompleted = db.varoqProgress[currentUser.email]?.[subject]?.[varoqIndex];
+                const completedClass = isCompleted ? 'completed' : 'active';
+                const completedBadge = isCompleted ? '<span class="status-badge status-completed">✅ Yakunlangan</span>' : '<span class="status-badge status-active">⏳ Davom etmoqda</span>';
+                
+                let buttonHtml = '';
+                if (varoqIndex < topics.length) {
+                    if (!isCompleted) {
+                        buttonHtml = `<button class="btn-confirm" onclick="completeVaroq('${subject}', ${varoqIndex})">✅ Yakunlash</button>`;
+                    } else {
+                        buttonHtml = '<button class="btn-add-money" onclick="viewVaroqDetails()" disabled>✅ Yakunlangan</button>';
+                    }
+                } else {
+                    // Last varoq - Yopish button
+                    buttonHtml = '<button class="btn-cancel" onclick="closeVaroqs()">❌ Yopish</button>';
+                }
+                
+                varoqsList.innerHTML += `
+                    <div class="varoq-card">
+                        <div class="varoq-title">${varoqIndex}. ${topic}</div>
+                        <div class="varoq-desc">${completedBadge}</div>
+                        ${buttonHtml}
+                    </div>
+                `;
+            });
+            
+            document.getElementById('varoqContainer').style.display = 'block';
+        }
+
+        function completeVaroq(subject, varoqIndex) {
+            if (!db.varoqProgress[currentUser.email]) {
+                db.varoqProgress[currentUser.email] = {};
+            }
+            if (!db.varoqProgress[currentUser.email][subject]) {
+                db.varoqProgress[currentUser.email][subject] = {};
+            }
+            db.varoqProgress[currentUser.email][subject][varoqIndex] = true;
+            saveDB();
+            
+            alert(`✅ ${varoqIndex}-varoq yakunlandi!`);
+        }
+
+        function closeVaroqs() { document.getElementById('varoqContainer').style.display = 'none'; }
+
+        function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) { alert('Iltimos, username va parolni to\'ldiring!'); return; }
+            
+            let user = db.users.find(u => u.email === username && u.password === password);
+            if (!user) {
+                alert('❌ Foydalanuvchi topilmadi! Ro\'yxatdan o\'ting.');
+                return;
+            }
+            
+            currentUser = user;
+            updateUI();
+            closeLogin();
+            alert(`✅ Tizimga kirdingiz! Salom, ${currentUser.name}!`);
+        }
+
+        function register() {
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            
+            if (!username || !password) { alert('Iltimos, username va parolni kiriting!'); return; }
+            if (db.users.find(u => u.email === username)) { alert('❌ Bu username allaqachon ro\'yxatdan o\'tgan!'); return; }
+            
+            const user = { 
+                id: Date.now().toString(), 
+                name: username,
+                email: username, 
+                password: password, 
+                phone: '', 
+                type: 'user', 
+                balance: 0 
+            };
+            db.users.push(user);
+            saveDB();
+            alert(`✅ Ro'yxatdan o'tdingiz!\n\nUsername: ${username}\nParol: ${password}\n\nEndi login qiling.`);
+            closeRegister();
+        }
+
+        function updateUI() {
+            document.getElementById('userGreeting').textContent = `Salom, ${currentUser.name}!`;
+            document.getElementById('userBalance').style.display = 'inline';
+            document.getElementById('userBalance').textContent = `Balans: ${formatPrice(currentUser.balance)}`;
+            document.getElementById('loginBtn').style.display = 'none';
+            document.getElementById('logoutBtn').style.display = 'inline-block';
+            document.getElementById('addMoneyBtn').style.display = currentUser.type === 'user' ? 'inline-block' : 'none';
+            
+            if (currentUser.type === 'teacher') {
+                document.getElementById('teacherBtn').style.display = 'inline-block';
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('userGreeting').textContent = 'Hush kelibsiz!';
+            document.getElementById('userBalance').style.display = 'none';
+            document.getElementById('loginBtn').style.display = 'inline-block';
+            document.getElementById('logoutBtn').style.display = 'none';
+            document.getElementById('addMoneyBtn').style.display = 'none';
+            document.getElementById('teacherBtn').style.display = 'none';
+        }
+
+        function addMoney() {
+            const password = document.getElementById('addMoneyPassword').value.trim();
+            const amount = parseInt(document.getElementById('addMoneyAmount').value.trim());
+            if (password !== 'oylik') { alert('❌ Noto\'g\'ri parol! Parol: oylik'); return; }
+            if (!amount || amount <= 0) { alert('❌ Iltimos, to\'g\'ri summani kiriting!'); return; }
+            currentUser.balance += amount;
+            document.getElementById('userBalance').textContent = `Balans: ${formatPrice(currentUser.balance)}`;
+            alert(`✅ Pul qo\'shildi!\n\nQo\'shilgan: ${formatPrice(amount)}\nJami: ${formatPrice(currentUser.balance)}`);
+            document.getElementById('addMoneyPassword').value = '';
+            document.getElementById('addMoneyAmount').value = '';
+            closeAddMoney();
+        }
+
+        function openBooking(course, price) {
+            if (!currentUser) { alert('⚠️ Avval login bo\'ling!'); showLogin(); return; }
+            if (currentUser.type === 'teacher') { alert('❌ Ustoz siz kurs band qila olmaysiz!'); return; }
+            
+            const bookingId = 'b' + Date.now();
+            const booking = {
+                id: bookingId,
+                userId: currentUser.id,
+                userEmail: currentUser.email,
+                course: course,
+                price: price,
+                months: 1,
+                fullName: currentUser.name,
+                phone: currentUser.phone,
+                time: null,
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+            currentBooking = booking;
+            
+            document.getElementById('selectedCourse').value = course;
+            document.getElementById('selectedPrice').value = price;
+            document.getElementById('bookingId').value = bookingId;
+            document.getElementById('fullName').value = currentUser.name;
+            document.getElementById('phone').value = currentUser.phone;
+            document.getElementById('bookingMonths').value = 1;
+            
+            selectedTime = null;
+            document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+            updateBookingPrice();
+            document.getElementById('bookingModal').classList.add('active');
+        }
+
+        function closeBooking() { document.getElementById('bookingModal').classList.remove('active'); }
+        function selectTime(time) {
+            selectedTime = time;
+            document.querySelectorAll('.time-slots .time-slot').forEach(s => s.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+        }
+
+        function updateBookingPrice() {
+            const basePrice = parseInt(document.getElementById('selectedPrice').value);
+            const months = parseInt(document.getElementById('bookingMonths').value);
+            currentBooking.months = months;
+            currentBooking.price = basePrice * months;
+            document.getElementById('displayFinalPrice').textContent = formatPrice(currentBooking.price);
+        }
+
+        function submitBooking() {
+            if (!currentUser) { alert('⚠️ Avval login bo\'ling!'); showLogin(); return; }
+            if (currentUser.type === 'teacher') { alert('❌ Ustoz siz kurs band qila olmaysiz!'); return; }
+            
+            const course = document.getElementById('selectedCourse').value;
+            const fullName = document.getElementById('fullName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const months = parseInt(document.getElementById('bookingMonths').value);
+            const price = parseInt(document.getElementById('selectedPrice').value) * months;
+            const time = selectedTime;
+            
+            if (!fullName) { alert('Ismingizni kiriting!'); return; }
+            if (!time) { alert('Dars vaqtini tanlang!'); return; }
+            
+            if (currentUser.balance < price) {
+                alert(`❌ Yetarli pul yo'q! Sizning balansingiz: ${formatPrice(currentUser.balance)}`);
+                return;
+            }
+            
+            currentUser.balance -= price;
+            
+            currentBooking.fullName = fullName;
+            currentBooking.phone = phone;
+            currentBooking.time = time;
+            currentBooking.status = 'active';
+            
+            db.bookings.push(currentBooking);
+            saveDB();
+            
+            alert(`✅ Kurs band qilindi!\n\nKurs: ${course}\nO'quvchi: ${fullName}\nTelefon: ${phone}\nDavomiyligi: ${months} oy\nVaqti: ${time}\nTo'lov: ${formatPrice(price)}\nQolgan balans: ${formatPrice(currentUser.balance)}`);
+            closeBooking();
+        }
+
+        function cancelBooking(bookingId) {
+            if (!confirm('❌ Kursni bekor qilishni xohlaysizmi? 50% pul qaytariladi.')) return;
+            
+            const booking = db.bookings.find(b => b.id === bookingId);
+            if (!booking) return;
+            
+            const refund = booking.price * 0.5;
+            const user = db.users.find(u => u.id === booking.userId);
+            if (user) {
+                user.balance += refund;
+            }
+            
+            booking.status = 'cancelled';
+            saveDB();
+            
+            alert(`✅ Kurs bekor qilindi!\n\nQaytarilgan: ${formatPrice(refund)}`);
+            closeStudentList();
+            showTeacherPanel();
+        }
+
+        function withdrawMoney() {
+            const amount = parseInt(document.getElementById('withdrawAmount').value.trim());
+            if (!amount || amount <= 0) { alert('❌ Iltimos, to\'g\'ri summani kiriting!'); return; }
+            
+            const balance = db.teacherBalances[currentUser.email] || 0;
+            if (amount > balance) {
+                alert(`❌ Yetarli pul yo'q! Sizning balansingiz: ${formatPrice(balance)}`);
+                return;
+            }
+            
+            db.teacherBalances[currentUser.email] = balance - amount;
+            saveDB();
+            
+            alert(`✅ ${formatPrice(amount)} yechib olindi!\n\nQolgan balans: ${formatPrice(db.teacherBalances[currentUser.email])}`);
+            document.getElementById('withdrawAmount').value = '';
+            closeWithdraw();
+            showTeacherPanel();
+        }
+
+        function getTeacherBalance(email) {
+            return db.teacherBalances[email] || 0;
+        }
+
+        function closeSuccess() { document.getElementById('successModal').classList.remove('active'); }
+
+        window.onload = function() { loadDB(); renderCourses(); };
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') { event.target.classList.remove('active'); }
+        };
+    </script>
+</body>
+</html>
+
+        // O'chirilgan funksiyalar:
+        // - showVaroqs() - Varoq tizimi
+        // - completeVaroq() - Varoq yakunlash
+        // - closeVaroqs() - Varoqlarni yopish
